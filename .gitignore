@@ -1,0 +1,25 @@
+# ROS2 Build artifacts
+build/
+install/
+log/
+
+# Python byte code and cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.editable/
+
+# OS generated files
+.DS_Store
+.thumbs.db
+
+# VSCode settings
+.vscode/
+
+# Model files (Optional: 如果模型文件太大，建议用 Git LFS 或单独下载)
+# src/PipeBot_vision/models/*.onnx
+
+# User specific local config
+*.local
