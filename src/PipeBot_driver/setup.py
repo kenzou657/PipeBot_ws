@@ -24,6 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            # '可执行文件名 = 包名.文件名:main函数'
+            'serial_node = PipeBot_driver.serial_node:main',
         ],
     },
 )
