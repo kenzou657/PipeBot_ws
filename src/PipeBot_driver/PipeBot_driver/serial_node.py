@@ -21,6 +21,7 @@ class SerialDriverNode(Node):
         
         try:
             self.ser = serial.Serial(port, baud, timeout=0.1)
+            self.ser.reset_input_buffer()
             self.get_logger().info(f"Connected to STM32 at {port}")
         except Exception as e:
             self.get_logger().error(f"Failed to open serial port: {e}")
