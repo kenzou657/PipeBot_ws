@@ -24,6 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
+            'image_capture_node = PipeBot_vision.image_capture_node:main',
         ],
     },
 )

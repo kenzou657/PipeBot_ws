@@ -3,6 +3,7 @@ from rclpy.node import Node
 import serial
 import struct
 import collections
+import math
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32MultiArray
@@ -35,6 +36,33 @@ class SerialDriverNode(Node):
         # 3. 定时器：100Hz 频率解析串口
         self.timer = self.create_timer(0.01, self.receive_loop)
 
+    def euler_to_quaternion(self, roll, pitch, yaw):
+        """
+        将欧拉角（roll, pitch, yaw）转换为四元数（x, y, z, w）
+        输入单位：度
+        输出：四元数 (x, y, z, w)
+        """
+        # 转换为弧度
+        roll_rad = math.radians(roll)
+        pitch_rad = math.radians(pitch)
+        yaw_rad = math.radians(yaw)
+        
+        # 计算半角
+        cy = math.cos(yaw_rad * 0.5)
+        sy = math.sin(yaw_rad * 0.5)
+        cp = math.cos(pitch_rad * 0.5)
+        sp = math.sin(pitch_rad * 0.5)
+        cr = math.cos(roll_rad * 0.5)
+        sr = math.sin(roll_rad * 0.5)
+        
+        # 计算四元数
+        w = cr * cp * cy + sr * sp * sy
+        x = sr * cp * cy - cr * sp * sy
+        y = cr * sp * cy + sr * cp * sy
+        z = cr * cp * sy - sr * sp * cy
+        
+        return (x, y, z, w)
+
     def check_sum(self, data):
         """计算前9字节的和校验"""
         return sum(data[:9]) & 0xFF
@@ -59,11 +87,34 @@ class SerialDriverNode(Node):
             msg = Float32MultiArray(data=[float(left_vel), float(right_vel)])
             self.odom_raw_pub.publish(msg)
 
-        elif msg_id == 0x05:  # 陀螺仪欧拉角 (示例：发布IMU或自定义姿态)
-            roll = to_s16(data[0], data[1]) / 100.0   # 假设单位是0.01度
+        elif msg_id == 0x05:  # 陀螺仪欧拉角
+            roll = to_s16(data[0], data[1]) / 100.0   # 单位是0.01度
             pitch = to_s16(data[2], data[3]) / 100.0
             yaw = to_s16(data[4], data[5]) / 100.0
-            # 这里可以进一步封装成四元数发布
+            
+            # 转换为四元数
+            qx, qy, qz, qw = self.euler_to_quaternion(roll, pitch, yaw)
+            
+            # 构造并发布 IMU 消息
+            imu_msg = Imu()
+            imu_msg.header.stamp = self.get_clock().now().to_msg()
+            imu_msg.header.frame_id = 'imu_link'
+            
+            # 设置四元数方向
+            imu_msg.orientation.x = qx
+            imu_msg.orientation.y = qy
+            imu_msg.orientation.z = qz
+            imu_msg.orientation.w = qw
+            
+            # 方向协方差（-1 表示未知）
+            imu_msg.orientation_covariance[0] = -1.0
+            
+            # 角速度和线性加速度未提供，设置协方差为 -1
+            imu_msg.angular_velocity_covariance[0] = -1.0
+            imu_msg.linear_acceleration_covariance[0] = -1.0
+            
+            self.imu_pub.publish(imu_msg)
+            self.get_logger().info(f'IMU: roll={roll:.2f}°, pitch={pitch:.2f}°, yaw={yaw:.2f}°')
 
         elif msg_id == 0x06:  # 测距模块数据 (单位: mm)
             # data[0,1] 是左距离，data[2,3] 是右距离
