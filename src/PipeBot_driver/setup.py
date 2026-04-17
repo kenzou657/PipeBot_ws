@@ -11,7 +11,11 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=[
+        'setuptools',
+        'pybluez>=0.23',
+        'bless>=0.2.0',
+    ],
     zip_safe=True,
     maintainer='pi',
     maintainer_email='pi@todo.todo',
@@ -27,6 +31,10 @@ setup(
             # '可执行文件名 = 包名.文件名:main函数'
             'serial_node = PipeBot_driver.serial_node:main',
             'odometry_publisher_node = PipeBot_driver.odometry_publisher_node:main',
+            'bluetooth_receiver_node = PipeBot_driver.bluetooth_receiver_node:main',
+            'command_handler_node = PipeBot_driver.command_handler_node:main',
+            'state_manager_node = PipeBot_driver.state_manager_node:main',
+            'bluetooth_sender_node = PipeBot_driver.bluetooth_sender_node:main',
         ],
     },
 )
