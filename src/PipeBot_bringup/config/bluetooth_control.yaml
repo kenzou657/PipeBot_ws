@@ -1,0 +1,37 @@
+# 蓝牙接收节点配置
+bluetooth_receiver:
+  ros__parameters:
+    # 蓝牙设备名称
+    bt_name: 'PipeBot Control'
+    # 蓝牙适配器
+    bt_adapter: 'hci0'
+    # GATT 服务 UUID
+    service_uuid: '12345678-1234-5678-1234-56789ABCDEF0'
+    # 接收特征值 UUID（写入）
+    rx_char_uuid: '12345678-1234-5678-1234-56789ABCDEF1'
+    # 发送特征值 UUID（读取/通知）
+    tx_char_uuid: '12345678-1234-5678-1234-56789ABCDEF2'
+
+# 状态管理节点配置
+state_manager:
+  ros__parameters:
+    # 状态发布频率（Hz）
+    publish_rate: 2.0
+    # 测距警告阈值（mm）
+    distance_warning_threshold: 200.0
+
+# 命令处理节点配置
+command_handler:
+  ros__parameters:
+    # 命令超时时间（秒）
+    command_timeout: 0.5
+    # 默认速度（0-255）
+    default_speed: 100
+    # 转向速度（0-255）
+    turn_speed: 80
+
+# 蓝牙发送节点配置
+bluetooth_sender:
+  ros__parameters:
+    # 反馈发送频率（Hz）
+    feedback_rate: 2.0

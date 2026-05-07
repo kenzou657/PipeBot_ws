@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
+from std_msgs.msg import String, UInt8MultiArray
+from std_srvs.srv import Trigger
 import json
 import struct
 
@@ -32,22 +33,25 @@ class BluetoothSenderNode(Node):
             10
         )
         
+        # 发布者：发送反馈数据到蓝牙接收节点
+        self.feedback_pub = self.create_publisher(UInt8MultiArray, 'bluetooth/feedback', 10)
+        
         # 定时器：定期发送反馈
         timer_period = 1.0 / feedback_rate
         self.timer = self.create_timer(timer_period, self.send_feedback)
         
-        self.get_logger().info('Bluetooth sender node started')
+        self.get_logger().info('蓝牙发送节点已启动')
     
     def bt_status_callback(self, msg):
         """监听蓝牙连接状态"""
-        self.get_logger().info(f'Bluetooth status: {msg.data}')
+        self.get_logger().info(f'蓝牙状态: {msg.data}')
     
     def state_callback(self, msg):
         """接收机器人状态"""
         try:
             self.latest_state = json.loads(msg.data)
         except Exception as e:
-            self.get_logger().error(f'Failed to parse state: {e}')
+            self.get_logger().error(f'解析状态失败: {e}')
     
     def send_feedback(self):
         """发送反馈数据到手机"""
@@ -58,9 +62,13 @@ class BluetoothSenderNode(Node):
         feedback_data = self.build_feedback_packet()
         
         if feedback_data is not None:
-            # 这里需要通过 bluetooth_receiver_node 发送
-            # 实际实现中可以通过 ROS2 服务或共享内存
-            self.get_logger().debug(f'Feedback ready: {len(feedback_data)} bytes')
+            # 发布到 bluetooth/feedback 话题
+            # bluetooth_receiver_node 会订阅此话题并通过 BLE 发送
+            feedback_msg = UInt8MultiArray()
+            feedback_msg.data = list(feedback_data)
+            self.feedback_pub.publish(feedback_msg)
+            
+            self.get_logger().debug(f'反馈数据已发布: {len(feedback_data)} 字节')
     
     def build_feedback_packet(self):
         """
@@ -128,7 +136,7 @@ class BluetoothSenderNode(Node):
             return b''.join(packets)
             
         except Exception as e:
-            self.get_logger().error(f'Failed to build feedback packet: {e}')
+            self.get_logger().error(f'构造反馈数据包失败: {e}')
             return None
     
     def create_packet(self, data_type, data):

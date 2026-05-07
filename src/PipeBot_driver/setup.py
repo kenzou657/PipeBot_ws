@@ -13,8 +13,7 @@ setup(
     ],
     install_requires=[
         'setuptools',
-        'pybluez>=0.23',
-        'bless>=0.2.0',
+        'bluezero>=0.6.0',
     ],
     zip_safe=True,
     maintainer='pi',
