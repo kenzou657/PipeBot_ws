@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+from glob import glob
+import os
 
 package_name = 'PipeBot_vision'
 
@@ -10,12 +12,18 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        # 添加launch文件
+        (os.path.join('share', package_name, 'launch'),
+            glob(os.path.join('launch', '*.launch.py'))),
+        # 添加web文件
+        (os.path.join('share', package_name, 'web'),
+            glob(os.path.join('web', '*.html'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='pi',
     maintainer_email='pi@todo.todo',
-    description='TODO: Package description',
+    description='PipeBot 视觉系统 - USB相机采集与流媒体传输',
     license='TODO: License declaration',
     extras_require={
         'test': [

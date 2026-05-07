@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PipeBot 管道检测系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .stream-section {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stream-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .stream-info {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .stream-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .stream-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .stream-loading {
+            position: absolute;
+            color: white;
+            font-size: 1.2em;
+            display: none;
+        }
+        
+        .stream-loading.active {
+            display: block;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .info-box {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .info-box p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status.ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status.ok .status-indicator {
+            background: #28a745;
+        }
+        
+        .status.warning .status-indicator {
+            background: #ffc107;
+        }
+        
+        .status.error .status-indicator {
+            background: #dc3545;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .metric-value {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .footer {
+            background: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #ddd;
+        }
+        
+        .config-section {
+            background: #f9f9f9;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .config-section h4 {
+            color: #28a745;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .config-item {
+            font-size: 0.85em;
+            color: #666;
+            padding: 4px 0;
+        }
+        
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 PipeBot 管道检测系统</h1>
+            <p>实时监控 · 智能检测 · 云端分析</p>
+        </div>
+        
+        <div class="content">
+            <div class="stream-section">
+                <div class="stream-title">实时监控画面</div>
+                <div class="stream-info">
+                    <strong>分辨率:</strong> 1920×1080 | 
+                    <strong>帧率:</strong> 5fps | 
+                    <strong>延迟:</strong> ~200-500ms
+                </div>
+                <div class="stream-container">
+                    <div class="stream-loading active">
+                        <p>⏳ 连接中...</p>
+                    </div>
+                    <img id="stream" src="" alt="实时监控画面" />
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="info-box">
+                    <h3>📊 系统状态</h3>
+                    <div id="system-status">
+                        <div class="status ok">
+                            <span class="status-indicator"></span>
+                            <span>相机连接正常</span>
+                        </div>
+                        <div class="status ok">
+                            <span class="status-indicator"></span>
+                            <span>网络连接正常</span>
+                        </div>
+                        <div class="status ok">
+                            <span class="status-indicator"></span>
+                            <span>流媒体服务运行中</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h3>📈 性能指标</h3>
+                    <div id="performance">
+                        <div class="metric">
+                            <span class="metric-label">帧率:</span>
+                            <span class="metric-value"><span id="fps">5</span> fps</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">延迟:</span>
+                            <span class="metric-value"><span id="latency">--</span> ms</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">带宽:</span>
+                            <span class="metric-value"><span id="bandwidth">0.54</span> Mbps</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">连接状态:</span>
+                            <span class="metric-value" id="connection-status">已连接</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <h4>⚙️ 系统配置</h4>
+                    <div class="config-item">
+                        <strong>分辨率:</strong> 1920×1080
+                    </div>
+                    <div class="config-item">
+                        <strong>采集帧率:</strong> 30fps
+                    </div>
+                    <div class="config-item">
+                        <strong>传输帧率:</strong> 5fps
+                    </div>
+                    <div class="config-item">
+                        <strong>编码格式:</strong> MJPEG
+                    </div>
+                    <div class="config-item">
+                        <strong>传输质量:</strong> 80
+                    </div>
+                    <div class="config-item">
+                        <strong>服务端口:</strong> 8080
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>PipeBot 管道检测系统 v1.0 | 最后更新: <span id="update-time">--:--:--</span></p>
+        </div>
+    </div>
+    
+    <script>
+        // 配置
+        const CONFIG = {
+            // 自动检测机器人IP（如果在同一网络）
+            // 或手动配置：'192.168.1.100'
+            ROBOT_IP: window.location.hostname || 'localhost',
+            STREAM_PORT: 8080,
+            STREAM_TOPIC: '/camera/image_raw',
+            UPDATE_INTERVAL: 1000, // 更新间隔（毫秒）
+        };
+        
+        // 状态管理
+        const state = {
+            streamConnected: false,
+            lastFrameTime: null,
+            frameCount: 0,
+            startTime: Date.now(),
+        };
+        
+        // 初始化流媒体
+        function initStream() {
+            const streamUrl = `http://${CONFIG.ROBOT_IP}:${CONFIG.STREAM_PORT}/stream?topic=${CONFIG.STREAM_TOPIC}`;
+            const streamImg = document.getElementById('stream');
+            const streamLoading = document.querySelector('.stream-loading');
+            
+            console.log(`初始化流媒体: ${streamUrl}`);
+            
+            streamImg.src = streamUrl;
+            
+            streamImg.addEventListener('load', () => {
+                console.log('流媒体已连接');
+                state.streamConnected = true;
+                state.lastFrameTime = Date.now();
+                state.frameCount++;
+                streamLoading.classList.remove('active');
+                updateConnectionStatus('已连接', 'ok');
+            });
+            
+            streamImg.addEventListener('error', () => {
+                console.error('流媒体连接失败');
+                state.streamConnected = false;
+                streamLoading.classList.add('active');
+                updateConnectionStatus('连接失败', 'error');
+            });
+        }
+        
+        // 更新连接状态
+        function updateConnectionStatus(status, statusClass) {
+            const statusElement = document.getElementById('connection-status');
+            statusElement.textContent = status;
+            
+            const systemStatus = document.getElementById('system-status');
+            const streamStatusDiv = systemStatus.querySelector('.status:nth-child(3)');
+            
+            streamStatusDiv.className = `status ${statusClass}`;
+            streamStatusDiv.innerHTML = `
+                <span class="status-indicator"></span>
+                <span>流媒体服务${status}</span>
+            `;
+        }
+        
+        // 更新时间
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('update-time').textContent = 
+                now.toLocaleTimeString('zh-CN');
+        }
+        
+        // 更新性能指标
+        function updateMetrics() {
+            // 计算运行时间
+            const elapsedSeconds = (Date.now() - state.startTime) / 1000;
+            
+            // 计算实际帧率
+            const actualFps = state.frameCount > 0 ? 
+                (state.frameCount / elapsedSeconds).toFixed(1) : 
+                '0';
+            
+            // 计算延迟（基于最后一帧时间）
+            let latency = '--';
+            if (state.lastFrameTime) {
+                latency = Math.round(Date.now() - state.lastFrameTime);
+            }
+            
+            // 更新显示
+            document.getElementById('fps').textContent = actualFps;
+            document.getElementById('latency').textContent = latency;
+        }
+        
+        // 定期更新
+        function startUpdates() {
+            updateTime();
+            updateMetrics();
+            
+            setInterval(() => {
+                updateTime();
+                updateMetrics();
+            }, CONFIG.UPDATE_INTERVAL);
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，初始化流媒体...');
+            initStream();
+            startUpdates();
+            
+            // 定期重新连接（如果连接失败）
+            setInterval(() => {
+                if (!state.streamConnected) {
+                    console.log('尝试重新连接...');
+                    initStream();
+                }
+            }, 5000);
+        });
+        
+        // 错误处理
+        window.addEventListener('error', (event) => {
+            console.error('页面错误:', event.error);
+        });
+    </script>
+</body>
+</html>

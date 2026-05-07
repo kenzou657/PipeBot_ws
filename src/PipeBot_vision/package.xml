@@ -3,10 +3,19 @@
 <package format="3">
   <name>PipeBot_vision</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>PipeBot 视觉系统 - USB相机采集与流媒体传输</description>
   <maintainer email="pi@todo.todo">pi</maintainer>
   <license>TODO: License declaration</license>
 
+  <!-- 运行时依赖 -->
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>opencv-python</depend>
+  <depend>web_video_server</depend>
+
+  <!-- 测试依赖 -->
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>
